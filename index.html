@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출석 확인 앱</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .class-section {
+            margin-bottom: 40px;
+        }
+
+        .class-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .bus-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .bus-grid .row-1 {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .student-btn {
+            background-color: #9e9e9e;
+            color: white;
+            border: none;
+            padding: 15px 10px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .student-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .student-btn.present {
+            background-color: #4caf50;
+        }
+
+        .student-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .student-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .control-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #ff5252;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 출석 확인</h1>
+        
+        <div class="class-section">
+            <div class="class-title">1호차 (45명)</div>
+            <div class="bus-grid" id="bus1">
+                <!-- 1호차 학생들 -->
+            </div>
+        </div>
+
+        <div class="class-section">
+            <div class="class-title">2호차 (45명)</div>
+            <div class="bus-grid" id="bus2">
+                <!-- 2호차 학생들 -->
+            </div>
+        </div>
+
+        <div class="class-section">
+            <div class="class-title">1반 명렬표 (23명)</div>
+            <div class="class-grid" id="class1">
+                <!-- 1반 학생들 -->
+            </div>
+        </div>
+
+        <div class="class-section">
+            <div class="class-title">2반 명렬표 (23명)</div>
+            <div class="class-grid" id="class2">
+                <!-- 2반 학생들 -->
+            </div>
+        </div>
+
+        <div class="class-section">
+            <div class="class-title">3반 명렬표 (23명)</div>
+            <div class="class-grid" id="class3">
+                <!-- 3반 학생들 -->
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="resetAttendance()">전체 초기화</button>
+        </div>
+    </div>
+
+    <script>
+        // 학생 이름 데이터
+        const bus1Students = [
+            '김민수', '이지영', '박철호', '정유나', '최다은', '강현우', '윤서연', '임재혁',
+            '한소미', '오준석', '신예린', '배성호', '문지우', '송하늘', '양민정', '조승현',
+            '구은별', '노태영', '서지민', '홍수빈', '차예진', '남도현', '백서윤', '원준영',
+            '심미래', '표지훈', '금나영', '방시우', '변주아', '사준혁', '어서영', '여민석',
+            '연하진', '염지후', '영서현', '옥준하', '왕예나', '용민찬', '우지안', '육서진',
+            '진서우', '천예린', '카민준', '타지유', '파서연'
+        ];
+
+        const bus2Students = [
+            '이서준', '김하은', '박지호', '최수연', '정민재', '강예원', '윤도현', '임채영',
+            '한준우', '오시연', '신민혁', '배지수', '문예린', '송태윤', '양서하', '조민서',
+            '구현준', '노예지', '서도윤', '홍지안', '차민준', '남서윤', '백준혁', '원지유',
+            '심서연', '표민성', '금예준', '방지윤', '변현서', '사도현', '어예린', '여준석',
+            '연서진', '염지우', '영민재', '옥서연', '왕도윤', '용지호', '우예나', '육민서',
+            '주하린', '츄민성', '쿠예진', '투서현', '푸도윤'
+        ];
+
+        const class1Students = [
+            '강민수', '고지영', '국철호', '권유나', '김다은', '나현우', '남서연', '노재혁',
+            '도소미', '라준석', '류예린', '마성호', '문지우', '박하늘', '배민정', '사승현',
+            '서은별', '손태영', '송지민', '신수빈', '안예진', '양도현', '오서윤'
+        ];
+
+        const class2Students = [
+            '우준영', '유미래', '윤지훈', '이나영', '임시우', '장주아', '전준혁', '정서영',
+            '조민석', '주하진', '차지후', '최서현', '추준하', '치예나', '칠민찬', '캄지안',
+            '컴서진', '케서우', '코예린', '쿠민준', '크지유', '키서연', '타민성'
+        ];
+
+        const class3Students = [
+            '테예준', '토지윤', '투현서', '티도현', '팀예린', '파준석', '패서진', '페지우',
+            '포민재', '푸서연', '프도윤', '플지호', '피예나', '하민서', '한서우', '함예린',
+            '합민준', '항지유', '해서연', '핵민성', '행예준', '향지윤', '헤현서'
+        ];
+
+        // 학생 버튼 생성 함수
+        function createStudentButtons() {
+            createBusButtons();
+            createClassButtons();
+        }
+
+        // 버스 버튼 생성 함수 (첫 줄 5열 + 4열 10줄)
+        function createBusButtons() {
+            const bus1Container = document.getElementById('bus1');
+            const bus2Container = document.getElementById('bus2');
+
+            // 1호차 학생 버튼 생성
+            bus1Students.forEach((name, index) => {
+                const button = document.createElement('button');
+                button.className = 'student-btn';
+                button.textContent = name;
+                button.onclick = () => toggleAttendance(button);
+                button.dataset.group = 'bus1';
+                button.dataset.index = index;
+
+                // 첫 5명은 별도 줄로 만들기
+                if (index < 5) {
+                    if (index === 0) {
+                        const firstRow = document.createElement('div');
+                        firstRow.className = 'row-1';
+                        bus1Container.appendChild(firstRow);
+                    }
+                    bus1Container.querySelector('.row-1').appendChild(button);
+                } else {
+                    bus1Container.appendChild(button);
+                }
+            });
+
+            // 2호차 학생 버튼 생성
+            bus2Students.forEach((name, index) => {
+                const button = document.createElement('button');
+                button.className = 'student-btn';
+                button.textContent = name;
+                button.onclick = () => toggleAttendance(button);
+                button.dataset.group = 'bus2';
+                button.dataset.index = index;
+
+                // 첫 5명은 별도 줄로 만들기
+                if (index < 5) {
+                    if (index === 0) {
+                        const firstRow = document.createElement('div');
+                        firstRow.className = 'row-1';
+                        bus2Container.appendChild(firstRow);
+                    }
+                    bus2Container.querySelector('.row-1').appendChild(button);
+                } else {
+                    bus2Container.appendChild(button);
+                }
+            });
+        }
+
+        // 반 버튼 생성 함수
+        function createClassButtons() {
+            const class1Container = document.getElementById('class1');
+            const class2Container = document.getElementById('class2');
+            const class3Container = document.getElementById('class3');
+
+            // 1반 학생 버튼 생성
+            class1Students.forEach((name, index) => {
+                const button = document.createElement('button');
+                button.className = 'student-btn';
+                button.textContent = name;
+                button.onclick = () => toggleAttendance(button);
+                button.dataset.group = 'class1';
+                button.dataset.index = index;
+                class1Container.appendChild(button);
+            });
+
+            // 2반 학생 버튼 생성
+            class2Students.forEach((name, index) => {
+                const button = document.createElement('button');
+                button.className = 'student-btn';
+                button.textContent = name;
+                button.onclick = () => toggleAttendance(button);
+                button.dataset.group = 'class2';
+                button.dataset.index = index;
+                class2Container.appendChild(button);
+            });
+
+            // 3반 학생 버튼 생성
+            class3Students.forEach((name, index) => {
+                const button = document.createElement('button');
+                button.className = 'student-btn';
+                button.textContent = name;
+                button.onclick = () => toggleAttendance(button);
+                button.dataset.group = 'class3';
+                button.dataset.index = index;
+                class3Container.appendChild(button);
+            });
+        }
+
+        // 출석 상태 토글 함수
+        function toggleAttendance(button) {
+            button.classList.toggle('present');
+            updateStats();
+        }
+
+        // 전체 초기화 함수
+        function resetAttendance() {
+            const allButtons = document.querySelectorAll('.student-btn');
+            allButtons.forEach(button => {
+                button.classList.remove('present');
+            });
+            updateStats();
+        }
+
+        // 통계 업데이트 함수 (제거됨)
+        function updateStats() {
+            // 통계 기능 제거
+        }
+
+        // 페이지 로드 시 학생 버튼 생성
+        document.addEventListener('DOMContentLoaded', function() {
+            createStudentButtons();
+            updateStats();
+        });
+    </script>
+</body>
+</html>
